@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Playground — drive, degen, learn</title>
+    <meta name="description" content="Playground is a 3D world you drive around to learn how memecoin markets move — with play-money tickets, not real money." />
+    <meta name="theme-color" content="#15122b" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+
+    <!-- Loader -->
+    <div id="loader">
+      <div class="grid-bg"></div>
+      <svg class="ring" viewBox="0 0 200 200">
+        <circle class="ring-track" cx="100" cy="100" r="80" />
+        <circle id="ring-progress" class="ring-progress" cx="100" cy="100" r="80" />
+      </svg>
+      <div class="loader-brand">PLAYGROUND</div>
+      <button id="start" class="start" hidden>
+        <span class="start-arrow">↙</span>
+        <span>Tap to play</span>
+        <small>sound on 🔊</small>
+      </button>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud" hidden>
+      <div class="ticker"><div id="ticker-track" class="ticker-track"></div></div>
+      <div class="hud-top-left">
+        <canvas id="minimap" width="160" height="160"></canvas>
+      </div>
+      <div class="hud-top-right">
+        <div class="wallet"><span class="wallet-label">Tickets</span><span id="wallet-value">1,000</span></div>
+        <button class="icon-btn" data-open="home" aria-label="Menu">☰</button>
+      </div>
+      <div id="race-timer" class="race-timer" hidden></div>
+      <div id="prompt" class="prompt" hidden></div>
+      <div id="toasts" class="toasts"></div>
+      <div id="touch" class="touch" hidden>
+        <div id="joystick" class="joystick"><div id="joystick-knob" class="joystick-knob"></div></div>
+        <div class="touch-buttons">
+          <button data-touch="jump">JUMP</button>
+          <button data-touch="boost">BOOST</button>
+          <button data-touch="interact">GO</button>
+          <button data-touch="honk">HONK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal" hidden>
+      <div class="modal-card">
+        <nav class="modal-tabs">
+          <button data-tab="home" title="Home">⌂</button>
+          <button data-tab="trade" title="Trading Pit">📈</button>
+          <button data-tab="launch" title="Launchpad">🚀</button>
+          <button data-tab="academy" title="Rug Academy">🎓</button>
+          <button data-tab="achievements" title="Achievements">🏆</button>
+          <button data-tab="leaderboard" title="Leaderboard">🏁</button>
+          <button data-tab="controls" title="Controls">🎮</button>
+          <button data-tab="options" title="Options">⚙</button>
+          <button data-tab="about" title="Behind the scenes">?</button>
+          <button class="modal-close" id="modal-close" title="Close (Esc)">✕</button>
+        </nav>
+        <div class="modal-body">
+          <div class="modal-art" id="modal-art"></div>
+          <div class="modal-content" id="modal-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -179,3 +179,21 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .checklist { padding-left: 0; list-style: none; }
 .checklist li { padding: 8px 0 8px 30px; position: relative; border-bottom: 1px solid var(--line); }
 .checklist li::before { content: '✓'; position: absolute; left: 4px; color: var(--lime); font-weight: 700; }
+
+/* Wallet */
+.connect-btn { height: 42px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 10px; background: var(--lime); color: var(--ink); border: 1px solid var(--lime); font-weight: 700; font-size: 14px; }
+.connect-btn .connect-dot { display: none; width: 8px; height: 8px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 8px var(--mint); }
+.connect-btn.on { background: var(--ink); color: var(--text); border-color: var(--line); }
+.connect-btn.on .connect-dot { display: block; }
+.connect-btn img { width: 20px; height: 20px; border-radius: 5px; }
+@media (max-width: 520px) { .connect-btn { padding: 0 10px; font-size: 12px; } .wallet { display: none; } }
+.wallet-list { display: grid; gap: 6px; margin-bottom: 8px; }
+.wallet-item { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; text-decoration: none; color: var(--text); }
+.wallet-item:hover { border-color: var(--lime); }
+.wallet-item img, .wallet-item .wallet-fallback { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; }
+.wallet-item .wallet-fallback { display: grid; place-items: center; background: var(--ink-3); font-size: 16px; }
+.wallet-item span { flex: 1; font-weight: 700; }
+.wallet-item small { color: var(--muted); font-weight: 400; }
+.wallet-card { background: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; margin-bottom: 14px; }
+.wallet-card .row b { font-variant-numeric: tabular-nums; word-break: break-all; text-align: right; }
+.wallet-card .actions-row { display: flex; gap: 8px; flex-wrap: wrap; }

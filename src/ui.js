@@ -3,11 +3,17 @@ import { market } from './market.js'
 import { ACHIEVEMENTS, achievements } from './achievements.js'
 import { audio } from './audio.js'
 import { drawCandles } from './world.js'
+import { wallet, walletLinks, shortAddress } from './wallet.js'
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+// Wallet icons come from the wallet itself; only allow image data URIs or https URLs
+const safeIcon = (src) => (typeof src === 'string' && /^(data:image\/(svg\+xml|png|webp|jpeg|gif)[;,]|https:\/\/)/.test(src) ? esc(src) : '')
 
 const $ = (s) => document.querySelector(s)
 
 const ART = {
   home: ['🛝', 'welcome to recess'],
+  wallet: ['👛', 'read-only, always'],
   trade: ['📈', 'number go up (sometimes)'],
   launch: ['🚀', 'to the moon, probably not'],
   academy: ['🎓', 'class is in session'],
@@ -62,7 +68,19 @@ export class UI {
       }
     })
 
+    bus.on('wallet-change', (e) => {
+      this.renderConnect()
+      if (e.connected && !e.silent && !e.balance) {
+        achievements.unlock('pluggedIn')
+        this.toast({ title: 'Wallet connected', text: `${wallet.connected.name} · ${shortAddress(wallet.connected.address)}` })
+      }
+      if (e.connected && e.silent) achievements.unlock('pluggedIn')
+      if (this.isOpen && (this.tab === 'wallet' || this.tab === 'leaderboard')) this.render()
+    })
+    bus.on('wallets-detected', () => { if (this.isOpen && this.tab === 'wallet' && !wallet.connected) this.render() })
+
     this.renderWallet()
+    this.renderConnect()
     this.renderTicker()
     setInterval(() => this.renderTicker(), 8000)
   }
@@ -98,10 +116,77 @@ export class UI {
       <h1>Welcome to Playground</h1>
       <p><strong>Playground</strong> is a tiny floating island where you learn how memecoin markets actually behave, by playing in one.</p>
       <p>Drive around, crash through the toy blocks, collect ticket coins, and paper-trade memecoins in the <strong>Trading Pit</strong>. Launch your own token, get rugged on purpose in <strong>Rug Alley</strong>, and pass the <strong>Rug Academy</strong>.</p>
-      <p>Everything runs on <strong>play tickets</strong>. There's no wallet, no real money, and nothing to lose except a bit of pride.</p>
+      <p>Everything runs on <strong>play tickets</strong>. No real money moves, and there's nothing to lose except a bit of pride. You can connect a real wallet to show off your address, but Playground only ever reads it.</p>
       <h2>Why "Playground"?</h2>
       <p>A playground is where kids learn about risk safely. You climb too high, you fall, you get back up. Memecoins are the scariest climbing frame on the internet, so this island gives you a place to fall without it costing anything.</p>
       <p class="fine">Press <strong>Esc</strong> to close. Drive into any glowing zone and press <strong>Enter</strong>.</p>`
+  }
+
+  tab_wallet() {
+    const c = wallet.connected
+    if (c) {
+      const bal = c.balance == null ? (c.kind === 'other' ? 'n/a' : 'unavailable') : `${c.balance.toLocaleString('en-US', { maximumFractionDigits: 4 })} ${esc(c.symbol)}`
+      return `<h1>Wallet connected</h1>
+        <div class="wallet-card">
+          <div class="wallet-item" style="border:none;padding:0;background:none">${this.iconHtml(c.icon)}<span>${esc(c.name)}</span><span class="pill good">connected</span></div>
+          <div class="row"><span>Address</span><b>${esc(c.address)}</b></div>
+          <div class="row"><span>Network</span><b>${esc(c.network || '…')}</b></div>
+          <div class="row"><span>Balance</span><b>${bal}</b></div>
+          <div class="actions-row">
+            <button class="btn" id="w-copy">Copy address</button>
+            <button class="btn" id="w-refresh">Refresh</button>
+            <button class="btn danger" id="w-disconnect">Disconnect</button>
+          </div>
+        </div>
+        <p class="fine">Read-only. Playground never asks you to sign messages or approve transactions. If a site ever asks you to sign something you don't understand, say no. Trades in the Pit still use play tickets.</p>`
+    }
+    const found = wallet.list()
+    const touch = matchMedia('(pointer: coarse)').matches
+    const foundHtml = found.length
+      ? `<div class="wallet-list">${found.map((w) => `<button class="wallet-item" data-wallet="${esc(w.id)}">${this.iconHtml(w.icon)}<span>${esc(w.name)}</span><span class="pill">${esc(w.chainName)}</span></button>`).join('')}</div>`
+      : `<p class="fine">No wallet found in this browser${touch ? '. On a phone, open Playground inside your wallet app below.' : '. Install one below, then reload this page.'}</p>`
+    const links = walletLinks()
+    const moreHtml = touch
+      ? `<div class="wallet-list">${links.filter((l) => l.mobile).map((l) => `<a class="wallet-item" href="${esc(l.mobile)}"><div class="wallet-fallback">📱</div><span>Open in ${esc(l.name)} <small>${esc(l.chain)}</small></span><span class="pill">app</span></a>`).join('')}</div>`
+      : `<div class="wallet-list">${links.map((l) => `<a class="wallet-item" href="${esc(l.install)}" target="_blank" rel="noopener"><div class="wallet-fallback">⬇</div><span>${esc(l.name)} <small>${esc(l.chain)}</small></span><span class="pill">install</span></a>`).join('')}</div>`
+    return `<h1>Connect a wallet</h1>
+      <p>Show up on the island as yourself. Playground reads your <strong>public address and balance</strong> and nothing else: no signatures, no approvals, no transactions.</p>
+      <h2>${found.length ? 'Found in this browser' : 'Detected wallets'}</h2>
+      ${foundHtml}
+      <h2>${touch ? 'Use your wallet app' : "Don't see yours?"}</h2>
+      ${moreHtml}`
+  }
+
+  iconHtml(src) {
+    const safe = safeIcon(src)
+    return safe ? `<img src="${safe}" alt="" />` : '<div class="wallet-fallback">👛</div>'
+  }
+
+  bind_wallet() {
+    this.content.querySelectorAll('[data-wallet]').forEach((b) => b.onclick = async () => {
+      b.disabled = true
+      b.querySelector('.pill').textContent = 'check wallet…'
+      const ok = await wallet.connect(b.dataset.wallet)
+      if (!ok && this.tab === 'wallet') this.render()
+    })
+    const copy = this.content.querySelector('#w-copy')
+    if (copy) copy.onclick = async () => {
+      try { await navigator.clipboard.writeText(wallet.connected.address); this.toast({ title: 'Copied', text: 'Address copied to clipboard.' }) } catch {}
+    }
+    const refresh = this.content.querySelector('#w-refresh')
+    if (refresh) refresh.onclick = () => wallet.refreshBalance()
+    const disc = this.content.querySelector('#w-disconnect')
+    if (disc) disc.onclick = () => wallet.disconnect()
+  }
+
+  renderConnect() {
+    const btn = $('#connect-btn')
+    const c = wallet.connected
+    btn.classList.toggle('on', !!c)
+    $('#connect-label').textContent = c ? shortAddress(c.address) : 'Connect wallet'
+    btn.querySelector('img')?.remove()
+    const safe = c && safeIcon(c.icon)
+    if (safe) btn.insertAdjacentHTML('afterbegin', `<img src="${safe}" alt="" />`)
   }
 
   tab_controls() {
@@ -150,7 +235,7 @@ export class UI {
 
   tab_leaderboard() {
     const rows = RIVALS.map(([n, t]) => ({ n, t }))
-    if (state.bestLap) rows.push({ n: 'you', t: state.bestLap, me: true })
+    if (state.bestLap) rows.push({ n: wallet.connected ? `you (${shortAddress(wallet.connected.address)})` : 'you', t: state.bestLap, me: true })
     rows.sort((a, b) => a.t - b.t)
     const lapRows = rows.slice(0, 10).map((r, i) => `<tr class="${r.me ? 'me' : ''}"><td>${i + 1}</td><td>${r.n}</td><td>${r.t.toFixed(2)}s</td></tr>`).join('')
     const net = state.tickets + market.portfolioValue()
@@ -190,9 +275,11 @@ export class UI {
       <p>Token prices are a random walk with pump and dump events mixed in. Rug risk depends on whether liquidity is locked and how much the dev holds. Your own buys and sells nudge the price, just like thin liquidity does on real pairs.</p>
       <h2>The sound</h2>
       <p>The engine, coins, honk and jingles are all synthesized live with the Web Audio API.</p>
+      <h2>Wallets</h2>
+      <p>Solana wallets connect through the Wallet Standard, and EVM wallets are found through EIP-6963. Playground only asks for your public address and reads its balance.</p>
       <h2>Saving</h2>
       <p>Tickets, coins and achievements are saved in your browser. Open positions reset when you reload, so sell before you leave.</p>
-      <p class="fine">Built for fun. Not financial advice. No wallets, no real money, no tracking.</p>`
+      <p class="fine">Built for fun. Not financial advice. Wallet connections are read-only: Playground never asks you to sign anything or send funds.</p>`
   }
 
   // ---------- Trading ----------

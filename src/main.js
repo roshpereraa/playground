@@ -7,12 +7,14 @@ import { achievements } from './achievements.js'
 import { World } from './world.js'
 import { Car } from './car.js'
 import { UI } from './ui.js'
+import { wallet } from './wallet.js'
 
 const $ = (s) => document.querySelector(s)
 const ringProgress = $('#ring-progress')
 const setProgress = (p) => { ringProgress.style.strokeDashoffset = String(502.65 * (1 - p)) }
 
 async function boot() {
+  wallet.init()
   setProgress(0.1)
   // Canvas textures need the brand fonts loaded before they are drawn
   await Promise.race([

@@ -23,6 +23,7 @@ export const ACHIEVEMENTS = [
   { id: 'fastLap', title: 'Speedrun', desc: 'Finish a lap in under 45 seconds.', goal: 1 },
   { id: 'air', title: 'Frequent flyer', desc: 'Jump 25 times.', goal: 25 },
   { id: 'honk', title: 'Bull horn', desc: 'Honk 50 times.', goal: 50 },
+  { id: 'pluggedIn', title: 'Plugged in', desc: 'Connect a real wallet (read-only).', goal: 1 },
   { id: 'student', title: 'Did the reading', desc: 'Read the Rug Academy.', goal: 1 },
 ]
 

@@ -4,6 +4,7 @@ import { ACHIEVEMENTS, achievements } from './achievements.js'
 import { audio } from './audio.js'
 import { drawCandles } from './world.js'
 import { wallet, walletLinks, shortAddress } from './wallet.js'
+import { SOCIAL } from './config.js'
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 // Wallet icons come from the wallet itself; only allow image data URIs or https URLs
@@ -81,6 +82,7 @@ export class UI {
 
     this.renderWallet()
     this.renderConnect()
+    this.renderSocial()
     this.renderTicker()
     setInterval(() => this.renderTicker(), 8000)
   }
@@ -119,6 +121,7 @@ export class UI {
       <p>Everything runs on <strong>play tickets</strong>. No real money moves, and there's nothing to lose except a bit of pride. You can connect a real wallet to show off your address, but Playground only ever reads it.</p>
       <h2>Why "Playground"?</h2>
       <p>A playground is where kids learn about risk safely. You climb too high, you fall, you get back up. Memecoins are the scariest climbing frame on the internet, so this island gives you a place to fall without it costing anything.</p>
+      <p>Follow <a href="${SOCIAL.x}" target="_blank" rel="noopener">${SOCIAL.handle}</a> on X for updates${SOCIAL.contract ? '' : ' — the contract address drops there first'}.</p>
       <p class="fine">Press <strong>Esc</strong> to close. Drive into any glowing zone and press <strong>Enter</strong>.</p>`
   }
 
@@ -177,6 +180,26 @@ export class UI {
     if (refresh) refresh.onclick = () => wallet.refreshBalance()
     const disc = this.content.querySelector('#w-disconnect')
     if (disc) disc.onclick = () => wallet.disconnect()
+  }
+
+  renderSocial() {
+    const x = $('#x-pill')
+    x.href = SOCIAL.x
+    $('#x-handle').textContent = SOCIAL.handle
+    const pill = $('#ca-pill')
+    const ca = (SOCIAL.contract || '').trim()
+    pill.classList.toggle('soon', !ca)
+    $('#ca-value').textContent = ca ? shortAddress(ca) : 'dropping soon'
+    pill.title = ca ? `${ca} (click to copy)` : 'Contract address drops at launch'
+    pill.onclick = async () => {
+      if (!ca) return this.toast({ title: 'No CA yet', text: `It drops at launch. ${SOCIAL.handle} announces it first.` })
+      try {
+        await navigator.clipboard.writeText(ca)
+        this.toast({ title: 'CA copied', text: `${shortAddress(ca)} · ${SOCIAL.chainLabel}` })
+      } catch {
+        this.toast({ title: 'Copy failed', text: ca, bad: true })
+      }
+    }
   }
 
   renderConnect() {

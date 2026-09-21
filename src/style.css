@@ -229,3 +229,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   #minimap { width: 96px; height: 96px; }
   .race-timer { top: 132px; }
 }
+
+.ca-short { display: none; }
+/* The full address makes the pill ~450px wide, so only show it when there's room beside the HUD */
+@media (max-width: 1279px) { .ca-full { display: none; } .ca-short { display: inline; } }

@@ -12,6 +12,28 @@ const safeIcon = (src) => (typeof src === 'string' && /^(data:image\/(svg\+xml|p
 
 const $ = (s) => document.querySelector(s)
 
+// navigator.clipboard needs a secure context and a trusted gesture; fall back to a temp selection
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {}
+  try {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.setAttribute('readonly', '')
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'
+    document.body.appendChild(ta)
+    ta.select()
+    ta.setSelectionRange(0, text.length)
+    const ok = document.execCommand('copy')
+    ta.remove()
+    return ok
+  } catch {
+    return false
+  }
+}
+
 const ART = {
   home: ['🛝', 'welcome to recess'],
   wallet: ['👛', 'read-only, always'],
@@ -174,7 +196,8 @@ export class UI {
     })
     const copy = this.content.querySelector('#w-copy')
     if (copy) copy.onclick = async () => {
-      try { await navigator.clipboard.writeText(wallet.connected.address); this.toast({ title: 'Copied', text: 'Address copied to clipboard.' }) } catch {}
+      const ok = await copyText(wallet.connected.address)
+      this.toast({ title: ok ? 'Copied' : 'Copy it manually', text: ok ? 'Address copied to clipboard.' : wallet.connected.address, bad: !ok })
     }
     const refresh = this.content.querySelector('#w-refresh')
     if (refresh) refresh.onclick = () => wallet.refreshBalance()
@@ -189,16 +212,13 @@ export class UI {
     const pill = $('#ca-pill')
     const ca = (SOCIAL.contract || '').trim()
     pill.classList.toggle('soon', !ca)
-    $('#ca-value').textContent = ca ? shortAddress(ca) : 'dropping soon'
+    $('#ca-full').textContent = ca || 'dropping soon'
+    $('#ca-short').textContent = ca ? shortAddress(ca) : 'dropping soon'
     pill.title = ca ? `${ca} (click to copy)` : 'Contract address drops at launch'
     pill.onclick = async () => {
       if (!ca) return this.toast({ title: 'No CA yet', text: `It drops at launch. ${SOCIAL.handle} announces it first.` })
-      try {
-        await navigator.clipboard.writeText(ca)
-        this.toast({ title: 'CA copied', text: `${shortAddress(ca)} · ${SOCIAL.chainLabel}` })
-      } catch {
-        this.toast({ title: 'Copy failed', text: ca, bad: true })
-      }
+      if (await copyText(ca)) this.toast({ title: 'CA copied', text: `${shortAddress(ca)} · ${SOCIAL.chainLabel}` })
+      else this.toast({ title: 'Copy it manually', text: ca, bad: true })
     }
   }
 
